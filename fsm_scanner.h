@@ -112,12 +112,12 @@ namespace lexer {
 		>;
 	};
 
-	using A = add_matcher_to_state<(string_matcher<"\0\1\2\3">()), 23, state<>>::type;
-	using B = add_matcher_to_state<(string_matcher<"\0\1">()), 42, A>::type;
-	using FSM = add_matcher_to_state<(string_matcher<"\0\1\5">()), 2137, B>::type;
+	//using A = add_matcher_to_state<(string_matcher<"\0\1\2\3">()), 23, state<>>::type;
+	//using B = add_matcher_to_state<(string_matcher<"\0\1">()), 42, A>::type;
+	//using FSM = add_matcher_to_state<(string_matcher<"\0\1\5">()), 2137, B>::type;
 
-	void foo() {
-	}
+	//void foo() {
+	//}
 
 
 

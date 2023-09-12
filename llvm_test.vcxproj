@@ -167,6 +167,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="argpack.h" />
+    <ClInclude Include="fsm.h" />
+    <ClInclude Include="pattern.h" />
     <ClInclude Include="fsm_scanner.h" />
     <ClInclude Include="overload.h" />
     <ClInclude Include="static_map.h" />

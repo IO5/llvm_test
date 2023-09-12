@@ -1,5 +1,6 @@
-#include "tokens.h"
-#include "fsm_scanner.h"
+//#include "tokens.h"
+//#include "fsm_scanner.h"
+#include "fsm.h"
 
 #include <deque>
 #include <variant>
@@ -114,10 +115,7 @@ namespace ast {
 
 }
 
-class Parser {
-
-};
-
+/*
 using llvm::Value;
 class IRCompiler {
 	Value* codegen(const ast::Expression& expr) {
@@ -149,7 +147,7 @@ class IRCompiler {
 	Value* codegen(const ast::Literal<T>& lt) {
 		return nullptr;
 	}
-};
+};*/
 
 using namespace std::string_literals;
 /*
@@ -184,38 +182,45 @@ auto makeLut(std::index_sequence<I...>) {
 auto lut = makeLut(std::make_index_sequence<std::tuple_size_v<tk::Tokens>>{});
 */
 
-
 int main() {
-	static std::unique_ptr<llvm::IRBuilder<>> Builder;
+	//static std::unique_ptr<llvm::IRBuilder<>> Builder;
 
-	auto context = std::make_unique<llvm::LLVMContext>();
-	auto module = std::make_unique<llvm::Module>("my cool jit", *context);
-	auto builder = std::make_unique<llvm::IRBuilder<>>(*context);
+	//auto context = std::make_unique<llvm::LLVMContext>();
+	//auto module = std::make_unique<llvm::Module>("my cool jit", *context);
+	//auto builder = std::make_unique<llvm::IRBuilder<>>(*context);
 
-	constexpr lexer::token t = lexer::token::from_id(5);
-	static_assert(t.id() == 5);
-	static_assert(t.is<token::op<"..">>());
-	static_assert(lexer::token::id_of<token::op<"+">> == 1);
-	static_assert(std::is_same_v<lexer::token::type_of_id<1>, token::op<"+">>);
-	std::println("{}", t.visit(
-		[](auto& val) {
-			if constexpr (requires { val.text; })
-				return std::string_view(val.text);
-			return std::string_view("not a lexeme");
-		}
-	));
+	//constexpr lexer::token t = lexer::token::from_id(5);
+	//static_assert(t.id() == 5);
+	//static_assert(t.is<token::op<"..">>());
+	//static_assert(lexer::token::id_of<token::op<"+">> == 1);
+	//static_assert(std::is_same_v<lexer::token::type_of_id<1>, token::op<"+">>);
+	//std::println("{}", t.visit(
+	//	[](auto& val) {
+	//		if constexpr (requires { val.text; })
+	//			return std::string_view(val.text);
+	//		return std::string_view("not a lexeme");
+	//	}
+	//));
 
-	static_assert(token::is_lexeme<token::op<"+">>::value);
-	static_assert(!token::is_lexeme<token::identifier>::value);
+	//static_assert(token::is_lexeme<token::op<"+">>::value);
+	//static_assert(!token::is_lexeme<token::identifier>::value);
 
-	lexer::foo();
-	std::string name = typeid(lexer::FSM).name();
-	std::string_view prefix = "struct lexer::";
+	/*std::string name = typeid(lexer::pattern::float_literal).name();
+	std::string_view prefix = "struct lexer::pattern::";
 	auto pos = name.find(prefix);
 	while (pos != name.npos) {
 		name.replace(pos, prefix.size(), "");
-		pos = name.find("struct lexer::");
+		pos = name.find(prefix);
 	}
-	std::println("{}", name);
+	std::println("{}", name);*/
+	std::println("{}", lexer::pattern::float_literal.to_string());
+
+	using namespace lexer::pattern;
+	constexpr auto b = lexer::fsm::make_builder().
+		add_pattern<0>(single_char('x')).second.
+		add_pattern<0>(single_char('y')).second.
+		add_pattern<1>(single_char('z')).second;
+	std::println("{}", b.to_string());
+
 	return 0;
 }
