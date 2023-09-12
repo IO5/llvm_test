@@ -15,91 +15,106 @@ namespace lexer {
 		return c == '\0' || is_whitespace(c);
 	}
 
+	template <char C>
+	struct match_char {
+		constexpr bool operator()(char c) {
+			return c = C;
+		};
+	};
+
+	struct match_endline {
+		constexpr bool operator()(char c) {
+			return c == '\n';
+		};
+	};
+
+	// ---
+
+
 	template <typename... Transitions>
 	struct state {
 	};
 
-	template <char C, typename NextState>
+	template <auto Matcher, typename NextState>
 	struct transition {
 		using next = NextState;
-
-		static constexpr bool matches(char c) {
-			return c == C;
-		}
+		static constexpr auto match = Matcher;
 	};
 
 	template <auto Result>
 	struct terminal_transition {
 		static constexpr auto result = Result;
+	};
 
-		static constexpr bool matches(char c) {
-			return is_boundary(c);
-		}
+	// ---
+
+	struct terminal_matcher {};
+
+	template <static_string Str>
+	struct string_matcher {
+		static constexpr auto reminder = Str.substr<1>();
+		static constexpr auto match = match_char<Str[0]>{};
+		static constexpr auto next = std::conditional_t<reminder.size == 0, terminal_matcher, string_matcher<reminder>>();
 	};
 
 	// --- meta functions ---
 
-	template <static_string Str, auto Result, typename State>
-	struct add_string_to_state;
+	template <auto Matcher, auto Result, typename State>
+	struct add_matcher_to_state;
 
-	template <typename T, static_string Str>
-	concept matching_transition = T::matches(Str[0]);
+	template <typename T, auto Matcher>
+	concept matching_transition = std::is_same_v<decltype(T::match), decltype(Matcher.match)>;
 
-	template <static_string Str, auto Result, typename Transition>
-	struct try_add_string_to_transition {
+	template <auto Matcher, auto Result, typename Transition>
+	struct try_add_matcher_to_transition {
 		using type = Transition;
 	};
 
-	template <static_string Str, auto Result, matching_transition Transition>
-	struct try_add_string_to_transition<Str, Result, Transition> {
-		static constexpr auto StrReminder = Str.substr<1>();
-
+	template <auto Matcher, auto Result, matching_transition<Matcher> Transition>
+	struct try_add_matcher_to_transition<Matcher, Result, Transition> {
 		using type = transition<
-			Str[0],
-			typename add_string_to_state<
-				StrReminder, Result, typename Transition::next
+			Matcher.match,
+			typename add_matcher_to_state<
+				Matcher.next, Result, typename Transition::next
 			>::type
 		>;
 	};
 
-	template <static_string Str, auto Result, typename... Transitions>
-		requires (matching_transition<Transitions> || ...)
-	struct add_string_to_state<Str, Result, state<Transitions...>> {
+	template <auto Matcher, auto Result, typename... Transitions>
+		requires (matching_transition<Transitions, Matcher> || ...)
+	struct add_matcher_to_state<Matcher, Result, state<Transitions...>> {
 		using type = state<
-			typename try_add_string_to_transition<
-				Str, Result, Transitions
+			typename try_add_matcher_to_transition<
+				Matcher, Result, Transitions
 			>::type
 			...
 		>;
 	};
 
-	template <static_string Str, auto Result, typename... Transitions>
-	struct add_string_to_state<Str, Result, state<Transitions...>> {
-		static constexpr auto StrReminder = Str.substr<1>();
-
+	template <auto Matcher, auto Result, typename... Transitions>
+	struct add_matcher_to_state<Matcher, Result, state<Transitions...>> {
 		using type = state<
 			Transitions...,
 			transition<
-				Str[0],
-				typename add_string_to_state<
-					StrReminder, Result, state<>
+				Matcher.match,
+				typename add_matcher_to_state<
+					Matcher.next, Result, state<>
 				>::type
 			>
 		>;
 	};
 
 	template <auto Result, typename... Transitions>
-	struct add_string_to_state<static_string(""), Result, state<Transitions...>> {
+	struct add_matcher_to_state<terminal_matcher{}, Result, state<Transitions... >> {
 		using type = state<
 			Transitions...,
 			terminal_transition<Result>
 		>;
 	};
 
-
-	using A = add_string_to_state<"\0\1\2\3", 23, state<>>::type;
-	using B = add_string_to_state<"\0\1", 42, A>::type;
-	using FSM = add_string_to_state<"\0\1\5", 2137, B>::type;
+	using A = add_matcher_to_state<(string_matcher<"\0\1\2\3">()), 23, state<>>::type;
+	using B = add_matcher_to_state<(string_matcher<"\0\1">()), 42, A>::type;
+	using FSM = add_matcher_to_state<(string_matcher<"\0\1\5">()), 2137, B>::type;
 
 	void foo() {
 	}
