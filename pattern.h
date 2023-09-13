@@ -79,26 +79,48 @@ namespace lexer {
 			return or_(lhs, rhs);
 		}
 
-		constexpr size_t Any = size_t(-1);
+		template <typename P>
+		struct at_most_ {
 
-		/*template <typename P>
-		struct times_ : pattern_base {
-			consteval times_(size_t min, size_t max, P inner) :
-				min(min), max(max), inner(inner) {}
+			using is_pattern = std::true_type;
+
+			size_t max;
+			P inner;
+		};
+
+		template <size_t max, typename P>
+		consteval auto at_most(P inner) {
+			return at_most_(max, inner);
+		}
+
+		template <typename P>
+		struct at_least_ {
+
+			using is_pattern = std::true_type;
+
+			size_t min;
+			P inner;
+		};
+
+		template <size_t min, typename P>
+		consteval auto at_least(P inner) {
+			return at_least(min, inner);
+		}
+
+		template <typename P>
+		struct times_ {
+
+			using is_pattern = std::true_type;
 
 			size_t min;
 			size_t max;
 			P inner;
-
-			consteval bool covers(pattern auto other) const {
-				return inner.covers(other);
-			}
 		};
 
 		template <size_t min, size_t max, typename P>
 		consteval auto times(P inner) {
 			return times_(min, max, inner);
-		}*/
+		}
 
 		template <typename P>
 		struct zero_or_more {
@@ -106,10 +128,6 @@ namespace lexer {
 			using is_pattern = std::true_type;
 
 			P inner;
-
-			std::string to_string() const {
-				return inner.to_string() + '*';
-			}
 		};
 
 		consteval auto operator*(pattern auto p) {
@@ -122,10 +140,6 @@ namespace lexer {
 			using is_pattern = std::true_type;
 
 			P inner;
-
-			std::string to_string() const {
-				return inner.to_string() + '+';
-			}
 		};
 
 		consteval auto operator+(pattern auto p) {
@@ -138,27 +152,69 @@ namespace lexer {
 			using is_pattern = std::true_type;
 
 			P inner;
-
-			std::string to_string() const {
-				return inner.to_string() + '?';
-			}
 		};
 
 		consteval auto operator~(pattern auto p) {
 			return zero_or_one(p);
 		}
 
-		struct single_char {
+		template <static_string Str>
+		consteval auto operator ""_p() {
+			if constexpr (Str.size == 1) {
+				return single_char(Str[0]);
+			} else {
+				return char_seq_impl(Str.data.data(), std::make_index_sequence<Str.size>{});
+			}
+		}
+
+		struct range {
 
 			using is_pattern = std::true_type;
 
-			char c;
+			char min;
+			char max;
 
-			std::string to_string() const {
-				return std::string(&c, 1);
+			constexpr bool operator==(const range&) const = default;
+
+			constexpr bool is_empty() const {
+				return min > max;
+			}
+
+			constexpr range operator&(const range& other) const {
+				return range{
+					.min = std::max(min, other.min),
+					.max = std::min(max, other.max)
+				};
+			}
+
+			constexpr bool contains(const range& other) const {
+				return min <= other.min && max >= other.max;
+			}
+
+			enum class overlap { disjoint, joint, contains, contained_by };
+
+			constexpr overlap test_overlap(const range& other) const {
+
+				using enum overlap;
+
+				auto intersection = *this & other;
+
+				if (intersection.is_empty())
+					return disjoint;
+
+				if (intersection == *this)
+					return contained_by;
+
+				if (intersection == other)
+					return contains;
+
+				return joint;
 			}
 		};
 
+		constexpr auto single_char(char c) {
+			return range(c, c);
+		}
 		consteval auto operator ""_p(char c) {
 			return single_char(c);
 		}
@@ -178,39 +234,12 @@ namespace lexer {
 			return char_seq_impl(str, std::make_index_sequence<N>{});
 		};
 
-		template <static_string Str>
-		consteval auto operator ""_p() {
-			if constexpr (Str.size == 1) {
-				return single_char(Str[0]);
-			} else {
-				return char_seq_impl(Str.data.data(), std::make_index_sequence<Str.size>{});
-			}
-		}
-
-		struct any_char {
-
-			using is_pattern = std::true_type;
-
-			std::string to_string() const {
-				return ".";
-			}
-		};
-
-		struct range {
-
-			using is_pattern = std::true_type;
-
-			char min;
-			char max;
-
-			std::string to_string() const {
-				return std::string("[") + min + '-' + max + ']';
-			}
-		};
-
+		constexpr auto any_char = range(-128, 127);
 		constexpr auto digit = range('0', '9');
 		constexpr auto alpha_lowercase = range('a', 'z');
 		constexpr auto alpha_uppercase = range('A', 'Z');
 		constexpr auto alpha = alpha_lowercase | alpha_uppercase;
+		constexpr auto alpnum = alpha | digit;
+		//constexpr auto non_ascii = range('\x80', '\xFF'); // TODO unicode pattern
 	}
 }

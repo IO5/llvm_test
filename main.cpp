@@ -2,6 +2,7 @@
 //#include "fsm_scanner.h"
 #include "fsm.h"
 
+/*
 #include <deque>
 #include <variant>
 #include <string>
@@ -29,7 +30,7 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Type.h>
-#include <llvm/IR/Verifier.h>
+#include <llvm/IR/Verifier.h>*/
 
 using std::string;
 /*
@@ -70,7 +71,7 @@ constexpr auto precedence = make_map_const<std::string_view, int>({
 	{"*",  6},
 	{"/",  6},
 });*/
-
+/*
 namespace ast {
 	struct Expression;
 
@@ -113,7 +114,7 @@ namespace ast {
 		Block body;
 	};
 
-}
+}*/
 
 /*
 using llvm::Value;
@@ -182,7 +183,7 @@ auto makeLut(std::index_sequence<I...>) {
 auto lut = makeLut(std::make_index_sequence<std::tuple_size_v<tk::Tokens>>{});
 */
 
-int main() {
+//int main() {
 	//static std::unique_ptr<llvm::IRBuilder<>> Builder;
 
 	//auto context = std::make_unique<llvm::LLVMContext>();
@@ -213,7 +214,8 @@ int main() {
 		pos = name.find(prefix);
 	}
 	std::println("{}", name);*/
-	std::println("{}", lexer::pattern::float_literal.to_string());
+
+	/*std::println("{}", lexer::pattern::float_literal.to_string());
 
 	using namespace lexer::pattern;
 	constexpr auto b = lexer::fsm::make_builder().
@@ -221,6 +223,4 @@ int main() {
 		add_pattern<0>(single_char('y')).second.
 		add_pattern<1>(single_char('z')).second;
 	std::println("{}", b.to_string());
-
-	return 0;
-}
+*/
