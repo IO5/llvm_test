@@ -173,48 +173,15 @@ namespace lexer {
 
 			char min;
 			char max;
-
-			constexpr bool operator==(const range&) const = default;
-
-			constexpr bool is_empty() const {
-				return min > max;
-			}
-
-			constexpr range operator&(const range& other) const {
-				return range{
-					.min = std::max(min, other.min),
-					.max = std::min(max, other.max)
-				};
-			}
-
-			constexpr bool contains(const range& other) const {
-				return min <= other.min && max >= other.max;
-			}
-
-			enum class overlap { disjoint, joint, contains, contained_by };
-
-			constexpr overlap test_overlap(const range& other) const {
-
-				using enum overlap;
-
-				auto intersection = *this & other;
-
-				if (intersection.is_empty())
-					return disjoint;
-
-				if (intersection == *this)
-					return contained_by;
-
-				if (intersection == other)
-					return contains;
-
-				return joint;
-			}
 		};
 
-		constexpr auto single_char(char c) {
-			return range(c, c);
-		}
+		struct single_char {
+
+			using is_pattern = std::true_type;
+
+			char ch;
+		};
+
 		consteval auto operator ""_p(char c) {
 			return single_char(c);
 		}
