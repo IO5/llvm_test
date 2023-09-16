@@ -1,6 +1,6 @@
 #pragma once
 
-#include "static_string.h"
+#include "utils/static_string.h"
 
 #include <utility>
 #include <type_traits>

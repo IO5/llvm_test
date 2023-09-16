@@ -2,18 +2,54 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="fsm_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="token_definition.h" />
-    <ClInclude Include="static_string.h" />
     <ClInclude Include="tokens.h" />
     <ClInclude Include="argpack.h" />
     <ClInclude Include="overload.h" />
     <ClInclude Include="static_map.h" />
     <ClInclude Include="fsm_scanner.h" />
-    <ClInclude Include="pattern.h" />
-    <ClInclude Include="fsm.h" />
-    <ClInclude Include="constexpr_utils.h" />
+    <ClInclude Include="test\catch2\catch_amalgamated.hpp">
+      <Filter>test\catch2</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\flat_map_base.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\flat_map.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\constexpr_utils.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\flat_set.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lexer\fsm.h">
+      <Filter>src\lexer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lexer\pattern.h">
+      <Filter>src\lexer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\static_string.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{8e0e2f9d-fa57-4498-9f5e-aa84c0de895c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\catch2">
+      <UniqueIdentifier>{77f6528c-b7fd-4deb-92c0-1b4a39d87632}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{a7db2b30-1f63-4383-ba07-514384707701}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\utils">
+      <UniqueIdentifier>{0143941f-1394-4da1-a6a0-0b5078bad517}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\lexer">
+      <UniqueIdentifier>{ec58fdd5-aab0-4c0b-bcce-204c2574ee68}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

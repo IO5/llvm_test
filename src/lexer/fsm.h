@@ -1,7 +1,8 @@
 #pragma once
 
 #include "pattern.h"
-#include "constexpr_utils.h"
+#include "utils/constexpr_utils.h"
+#include "utils/flat_set.h"
 
 #include <string_view>
 #include <vector>
@@ -43,86 +44,93 @@ namespace lexer {
 			);
 		}
 
-		struct range {
+		struct interval {
 
 			char min;
 			char max;
 
-			constexpr auto operator<=>(const range&) const = default;
+			constexpr auto operator<=>(const interval&) const = default;
 
 			constexpr bool is_empty() const {
 				return min > max;
 			}
 
-			constexpr range operator&(const range& other) const {
-				return range{
+			constexpr interval operator&(const interval& other) const {
+				return interval{
 					.min = std::max(min, other.min),
 					.max = std::min(max, other.max)
 				};
 			}
 
-			constexpr bool contains(const range& other) const {
+			constexpr interval operator|(const interval& other) const {
+				return interval{
+					.min = std::min(min, other.min),
+					.max = std::max(max, other.max),
+				};
+			}
+
+			constexpr bool contains(const interval& other) const {
 				return min <= other.min && max >= other.max;
 			}
 
-			constexpr bool contains(char ch) const {
-				return ch >= min && ch <= max;
+			constexpr bool empty() const {
+				return min > max;
 			}
 		};
 
 		using state_id = size_t;
 
+		struct transition { state_id next; interval input; };
 		struct eps_transition { state_id next; };
-		struct char_transition { char input; state_id next; };
-		struct range_transition { range input; state_id next; };
-
-		template <typename Action>
-		struct state {
-
-			std::vector<eps_transition> eps_trans;
-			std::vector<char_transition> char_trans;
-			std::vector<range_transition> range_trans;
-			std::optional<Action> action; // action to execute if the machine stops here/is final marker
-		};
 
 		template <typename Action>
 		class nfa {
 
 		public:
-			using state = state<Action>;
+			struct state {
+
+				std::vector<eps_transition> eps_trans;
+				std::vector<transition> trans;
+				std::optional<Action> action; // action to execute if the machine stops here/is final marker
+			};
+
 			// initial always first, final always last
 			std::vector<state> states;
 
-			static consteval nfa from_pattern(p::single_char pattern) {
+			constexpr nfa() {
+				states.emplace_back();
+			}
+
+			static constexpr nfa from_pattern(p::single_char pattern) {
 
 				nfa res;
-				res.states.resize(2);
-				states[0].char_trans.push_back({
-					.input = pattern.ch,
-					.next = 1
+				res.states.emplace_back();
+				states[0].trans.push_back({
+					.next = 1,
+					.input = interval{ pattern.ch, pattern.ch }
 				});
 				return res;
 			}
 
-			static consteval nfa from_pattern(p::range pattern) {
+			static constexpr nfa from_pattern(p::range pattern) {
 
 				nfa res;
-				res.states.resize(2);
-				states[0].range_trans.push_back({
-					.input = { pattern.min, pattern.max },
-					.next = 1
+				res.states.emplace_back();
+				states[0].trans.push_back({
+					.next = 1,
+					.input = { pattern.min, pattern.max }
 				});
 				return res;
 			}
 
 			template <p::pattern... Ps>
-			static consteval nfa from_pattern(p::seq<Ps...> seq) {
+			static constexpr nfa from_pattern(p::seq<Ps...> seq) {
 
 				return from_pattern(seq.patterns);
 			}
 
 			template <p::pattern... Ps>
-			static consteval nfa from_pattern(std::tuple<Ps...> seq) {
+			static constexpr nfa from_pattern(std::tuple<Ps...> seq) {
 
 				auto& [reminder, last] = tuple_pop(seq);
 				auto res = from_pattern(reminder);
@@ -133,19 +141,18 @@ namespace lexer {
 			}
 
 			template <p::pattern P>
-			static consteval nfa from_pattern(std::tuple<P> seq) {
+			static constexpr nfa from_pattern(std::tuple<P> seq) {
 
 				return from_pattern(std::get<0>(seq));
 			}
 
 			template <p::pattern L, p::pattern R>
-			static consteval nfa from_pattern(p::or_<L, R> pattern) {
+			static constexpr nfa from_pattern(p::or_<L, R> pattern) {
 
 				auto l_nfa = from_pattern(pattern.lhs);
 				auto r_nfa = from_pattern(pattern.rhs);
 
 				nfa res;
-				res.states.emplace_back(); // initial
 
 				auto l_final = l_nfa.states.size(); 
 				res.splice_states(std::move(l_nfa));
@@ -165,7 +172,7 @@ namespace lexer {
 			}
 
 			template <p::pattern P>
-			static consteval nfa from_pattern(p::one_or_more<P> pattern) {
+			static constexpr nfa from_pattern(p::one_or_more<P> pattern) {
 
 				auto res = from_pattern(pattern.inner);
 				res.extend();
@@ -177,7 +184,7 @@ namespace lexer {
 			}
 
 			template <p::pattern P>
-			static consteval nfa from_pattern(p::zero_or_one<P> pattern) {
+			static constexpr nfa from_pattern(p::zero_or_one<P> pattern) {
 
 				auto res = from_pattern(pattern.inner);
 				res.extend();
@@ -189,7 +196,7 @@ namespace lexer {
 			}
 
 			template <p::pattern P>
-			static consteval nfa from_pattern(p::zero_or_more<P> pattern) {
+			static constexpr nfa from_pattern(p::zero_or_more<P> pattern) {
 
 				auto res = from_pattern(pattern.inner);
 				res.extend();
@@ -204,12 +211,11 @@ namespace lexer {
 			}
 
 			template <p::pattern P>
-			static consteval nfa from_pattern(p::at_least_<P> pattern) {
+			static constexpr nfa from_pattern(p::at_least_<P> pattern) {
 
 				// transform A{n,} into A..AA+
 
 				nfa res;
-				res.states.emplace_back();
 
 				if (pattern.min == 0)
 					return from_pattern(p::zero_or_more{ pattern.inner });
@@ -230,13 +236,12 @@ namespace lexer {
 			}
 
 			template <p::pattern P>
-			static consteval nfa from_pattern(p::at_most_<P> pattern) {
+			static constexpr nfa from_pattern(p::at_most_<P> pattern) {
 
 				// transform A{,n} into A?..A?
 				compile_assert(pattern.max != 0);
 
 				nfa res;
-				res.states.emplace_back();
 
 				nfa single = from_pattern(pattern.inner);
 				single.extend();
@@ -251,13 +256,12 @@ namespace lexer {
 			}
 
 			template <p::pattern P>
-			static consteval nfa from_pattern(p::times_<P> pattern) {
+			static constexpr nfa from_pattern(p::times_<P> pattern) {
 
 				// transform A{n,m} into A..A A?..A?
 				compile_assert(pattern.min <= pattern.max);
 
 				nfa res;
-				res.states.emplace_back();
 
 				nfa single = from_pattern(pattern.inner);
 
@@ -283,10 +287,9 @@ namespace lexer {
 
 			// similar to or_ but disjoint final states, so only suitable for final mutliple pattern merge
 			template <typename Action>
-			friend consteval auto merge_nfas(std::vector<nfa>&& nfas) {
+			friend constexpr auto merge_nfas(std::vector<nfa>&& nfas) {
 
 				nfa res;
-				res.states.emplace_back(); // initial
 
 				for (auto& n : nfas) {
 					state_id initial = res.states.size();
@@ -297,118 +300,15 @@ namespace lexer {
 				return res;
 			}
 
-		private:
-			consteval void join(nfa&& other) {
+			constexpr auto eps_closure(const flat_set<state_id>& state_ids) const {
 
-				// merge this's final with other's initial
-
-				// first, remove final temporarily
-				auto final = std::move(states.back());
-				states.pop_back();
-
-				auto shift = splice_states(std::move(other));
-
-				// merge states: copy transitions from the old final to the common state
-				states[shift].eps_trans.append_range(std::move(final.eps_trans));
-				states[shift].char_trans.append_range(std::move(final.char_trans));
-				states[shift].range_trans.append_range(std::move(final.range_trans));
-			}
-
-			// add extra initial and final states with eps transitions
-			consteval void extend() {
-
-				// add new initial
-				shift_indexes(1);
-				states.emplace(states.begin());
-				add_eps_transition(0, 1);
-
-				// add new final
-				states.emplace_back();
-				add_eps_transition(states.size() - 2, states.size() - 1);
-			}
-
-			consteval void add_eps_transition(state_id from, state_id to) {
-
-				states[from].eps_trans.push_back({ .next = to });
-			}
-
-			consteval void shift_indexes(size_t shift) {
-
-				for (auto& s : states)
-					for (auto& t : s.trans)
-						t.next += shift;
-			}
-
-			consteval size_t splice_states(nfa&& other) {
-
-				auto shift = states.size();
-
-				other.shift_indexes(shift);
-				states.append_range(std::move(other.states));
-
-				return shift;
-			}
-		};
-
-		template <typename T>
-		struct flat_set : private std::vector<T> {
-
-			using base = std::vector<T>;
-			using base::begin;
-			using base::end;
-			using base::empty;
-			using base::size;
-
-			constexpr flat_set() = default;
-			constexpr flat_set(base&& v) : base(std::move(v)) {
-				std::sort(begin(), end());
-				erase(std::unique(begin(), end()), end());
-			}
-
-			constexpr void add(T item) {
-				auto it = std::upper_bound(begin(), end(), item);
-				if (*it == item)
-					return;
-				insert(it, item);
-			}
-
-			constexpr void add(flat_set<T> other) {
-				append_range(other);
-				std::sort(begin(), end());
-				erase(std::unique(begin(), end()), end());
-			}
-
-			constexpr bool contains(const T& item) const {
-				return std::binary_search(begin(), end(), item) != end();
-			}
-		};
-
-		template <typename Action>
-		class dfa {
-
-		public:
-			using state = state<Action>;
-			using nfa_state = state_id;
-			using nfa_states = flat_set<nfa_state>;
-
-			nfa<Action> source;
-			std::vector<std::pair<nfa_states, state>> states;
-
-			consteval dfa(nfa<Action>&& nfa) : source(std::move(nfa)) {
-
-			}
-
-		private:
-			consteval auto eps_closure(const nfa_states& states) {
-
-				nfa_states result;
-
-				nfa_states current = states;
+				flat_set<state_id> result;
+				flat_set<state_id> current = state_ids;
 				while (!current.empty()) {
 
-					nfa_states tmp;
+					flat_set<state_id> tmp;
 					for (auto id : current) {
-						for (auto& [next] : source.states[id].eps_trans) {
+						for (auto [next] : states[id].eps_trans) {
 							if (!current.contains(next) && !result.contains(next))
 								tmp.add(next);
 						}
@@ -420,32 +320,172 @@ namespace lexer {
 				return result;
 			}
 
-			static consteval auto get_trans_inputs(state& s) {
+			constexpr auto get_possible_inputs(const flat_set<state_id>& state_ids) const {
 
-				flat_set<range> inputs = s.range_trans;
+				flat_set<interval> trans_inputs;
 
-				for (auto& [ch, next] : s.char_trans)
-					inputs.emplace_back(ch, ch);
+				for (auto id : state_ids)
+					for (auto t : states[id].trans)
+						trans_inputs.add(t.input);
+				
+				std::vector<interval> inputs(std::from_range, std::move(trans_inputs));
+				std::vector<interval> result;
 
-				auto to_process = s.range_trans;
-				while (!to_process.empty()) {
+				auto find_intersects = [&](interval current) {
 
-					auto current = to_process.back();
-					to_process.pop_back();
+					for (auto it = inputs.begin(); it != inputs.end(); ++it) {
+						auto other_input = *it;
 
-					for (auto& tr : to_process)
-						if (auto intersec = current.input & tr.input; !intersec.empty())
-							inputs.add(itersec);
+						auto intersect = current & other_input;
+						if (intersect.empty())
+							continue;
 
-					// ????
+						auto sum = current | other_input;
+						inputs.erase(it);
+						inputs.push_back(interval{ .min = sum.min, .max = intersect.min - 1 });
+						inputs.push_back(intersect);
+						inputs.push_back(interval{ .min = intersect.max + 1, .max = sum.max });
+						return;
+					}
+
+					result.push_back(current);
+				};
+
+				while (!inputs.empty()) {
+					auto current = inputs.front();
+					inputs.erase(inputs.begin());
+
+					find_intersects(current);
 				}
+
+				return result;
 			}
 
+			constexpr auto move(const flat_set<state_id>& state_ids, interval input) const {
+
+				flat_set<state_id> result;
+
+				for (auto id : state_ids) {
+					const auto& state = states[id];
+
+					for (auto [t_next, t_input] : state.trans)
+						if (t_input.contains(input))
+							result.add(t_next);
+				}
+
+				return result;
+			}
+
+		private:
+			constexpr void join(nfa&& other) {
+
+				// merge this's final with other's initial
+
+				// first, remove final temporarily
+				auto final = std::move(states.back());
+				states.pop_back();
+
+				auto shift = splice_states(std::move(other));
+
+				// merge states: copy transitions from the old final to the common state
+				states[shift].eps_trans.append_range(std::move(final.eps_trans));
+				states[shift].trans.append_range(std::move(final.trans));
+			}
+
+			// add extra initial and final states with eps transitions
+			constexpr void extend() {
+
+				// add new initial
+				shift_indexes(1);
+				states.emplace(states.begin());
+				add_eps_transition(0, 1);
+
+				// add new final
+				states.emplace_back();
+				add_eps_transition(states.size() - 2, states.size() - 1);
+			}
+
+			constexpr void add_eps_transition(state_id from, state_id to) {
+
+				states[from].eps_trans.push_back({ .next = to });
+			}
+
+			constexpr void shift_indexes(size_t shift) {
+
+				for (auto& s : states)
+					for (auto& t : s.trans)
+						t.next += shift;
+			}
+
+			constexpr size_t splice_states(nfa&& other) {
+
+				auto shift = states.size();
+
+				other.shift_indexes(shift);
+				states.append_range(std::move(other.states));
+
+				return shift;
+			}
 		};
 
-		consteval void foo() {
+		template <typename Action>
+		class dfa {
 
-			dfa<int> d(nfa<int>{});
-		}
+		public:
+			struct state {
+
+				std::vector<transition> trans;
+				std::optional<Action> action; // action to execute if the machine stops here/is final marker
+			};
+
+			constexpr dfa() = default;
+			static constexpr dfa from_nfa(const nfa<Action>& nfa) {
+
+				/*const auto initial = nfa.eps_closure({ 0 });
+				std::vector<std::pair<flat_set<state_id>, Action>> finals;
+
+				flat_set<flat_set<state_id>> states = { initial };
+				std::vector<flat_set<state_id>> unmarked = { initial };
+
+				struct transition {
+					interval input;
+					flat_set<state_id> from;
+					flat_set<state_id> to;
+				};
+				std::vector<transition> trans;
+				
+				while (!unmarked.empty()) {
+					auto current = unmarked.back();
+					unmarked.pop_back();
+
+					for (auto id : current) {
+						auto& state = nfa.states[id];
+						if (state.action) {
+							finals.emplace_back(current, *state.action);
+							break;
+						}
+					}
+
+					for (auto input : nfa.get_possible_inputs(current)) {
+						auto next = nfa.eps_closure(nfa.move(current, input));
+						if (!states.contains(next)) {
+							states.add(next);
+							unmarked.push_back(next);
+						}
+
+						trans.push_back({
+							.input = input,
+							.from = current,
+							.to = next
+						});
+					}
+				}*/
+
+				return dfa{};
+			}
+
+		private:
+
+		};
 	}
 }
