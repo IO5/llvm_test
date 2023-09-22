@@ -16,4 +16,17 @@ public:
 			return &it->second;
 		return (V*)nullptr;
 	}
+	
+	constexpr auto& operator[](const K& key) const {
+
+		return *find(key);
+	}
+
+	constexpr auto& operator[](const K& key) {
+
+		auto it = this->find(key);
+		if (it != this->end())
+			it = this->add({ key, {} });
+		return *it;
+	}
 };

@@ -6,7 +6,6 @@
   <ItemGroup>
     <ClInclude Include="token_definition.h" />
     <ClInclude Include="tokens.h" />
-    <ClInclude Include="argpack.h" />
     <ClInclude Include="overload.h" />
     <ClInclude Include="static_map.h" />
     <ClInclude Include="fsm_scanner.h" />
@@ -32,6 +31,9 @@
       <Filter>src\lexer</Filter>
     </ClInclude>
     <ClInclude Include="src\utils\static_string.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\argpack.h">
       <Filter>src\utils</Filter>
     </ClInclude>
   </ItemGroup>

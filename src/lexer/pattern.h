@@ -16,7 +16,7 @@ namespace lexer {
 		template <typename T>
 		concept pattern = T::is_pattern::value;
 
-		template <typename... Ps>
+		template <pattern... Ps>
 		struct seq {
 
 			using is_pattern = std::true_type;
@@ -28,16 +28,6 @@ namespace lexer {
 				patterns(tuple) {}
 
 			std::tuple<Ps...> patterns;
-
-			std::string to_string() const {
-				return '(' + to_string_impl(std::index_sequence_for<Ps...>{}) + ')';
-			}
-
-		private:
-			template <size_t... Is>
-			std::string to_string_impl(std::index_sequence<Is...>) const {
-				return (std::get<Is>(patterns).to_string() + ...);
-			}
 		};
 
 		template<>
@@ -62,24 +52,20 @@ namespace lexer {
 			return seq(lhs, rhs);
 		}
 
-		template <typename L, typename R>
+		template <pattern L, pattern R>
 		struct or_ {
 
 			using is_pattern = std::true_type;
 
 			L lhs;
 			R rhs;
-
-			std::string to_string() const {
-				return '(' + lhs.to_string() + '|' + rhs.to_string() + ')';
-			}
 		};
 
 		consteval auto operator|(pattern auto lhs, pattern auto rhs) {
 			return or_(lhs, rhs);
 		}
 
-		template <typename P>
+		template <pattern P>
 		struct at_most_ {
 
 			using is_pattern = std::true_type;
@@ -88,12 +74,12 @@ namespace lexer {
 			P inner;
 		};
 
-		template <size_t max, typename P>
+		template <size_t max, pattern P>
 		consteval auto at_most(P inner) {
 			return at_most_(max, inner);
 		}
 
-		template <typename P>
+		template <pattern P>
 		struct at_least_ {
 
 			using is_pattern = std::true_type;
@@ -102,12 +88,12 @@ namespace lexer {
 			P inner;
 		};
 
-		template <size_t min, typename P>
+		template <size_t min, pattern P>
 		consteval auto at_least(P inner) {
-			return at_least(min, inner);
+			return at_least_(min, inner);
 		}
 
-		template <typename P>
+		template <pattern P>
 		struct times_ {
 
 			using is_pattern = std::true_type;
@@ -117,12 +103,12 @@ namespace lexer {
 			P inner;
 		};
 
-		template <size_t min, size_t max, typename P>
+		template <size_t min, size_t max, pattern P>
 		consteval auto times(P inner) {
 			return times_(min, max, inner);
 		}
 
-		template <typename P>
+		template <pattern P>
 		struct zero_or_more {
 
 			using is_pattern = std::true_type;
@@ -134,7 +120,7 @@ namespace lexer {
 			return zero_or_more(p);
 		}
 
-		template <typename P>
+		template <pattern P>
 		struct one_or_more {
 
 			using is_pattern = std::true_type;
@@ -146,7 +132,7 @@ namespace lexer {
 			return one_or_more(p);
 		}
 
-		template <typename P>
+		template <pattern P>
 		struct zero_or_one {
 
 			using is_pattern = std::true_type;

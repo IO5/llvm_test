@@ -21,6 +21,9 @@
     <ClCompile Include="test\utils\flat_map.cpp">
       <Filter>utils</Filter>
     </ClCompile>
+    <ClCompile Include="test\utils\flat_set.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="test\catch2\catch_amalgamated.hpp">

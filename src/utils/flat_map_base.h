@@ -28,11 +28,11 @@ public:
 		flat_map_base(std::span(init)) {}
 
 	constexpr auto begin(this auto& self) {
-		return storage.begin();
+		return self.storage.begin();
 	}
 
 	constexpr auto end(this auto& self) {
-		return storage.begin();
+		return self.storage.end();
 	}
 
 	constexpr std::size_t size() const {
@@ -43,9 +43,19 @@ public:
 		return storage.empty();
 	}
 
+	constexpr auto find(this auto& self, const key& key) {
+		auto it = std::ranges::lower_bound(self.storage, key, {}, Proj);
+
+		if (it != self.storage.end() && std::invoke(Proj, *it) != key)
+			it = self.storage.end();
+
+		return it;
+	}
+
 	constexpr bool contains(const key& key) const {
 		return std::ranges::binary_search(storage, key, {}, Proj);
 	}
+
 
 	constexpr auto add(T item) {
 		auto& key = std::invoke(Proj, item);
@@ -58,10 +68,11 @@ public:
 	}
 
 	template <std::ranges::range R>
-	constexpr void add(R&& range) {
+	constexpr void add(const R& range) {
 		storage.insert(storage.begin(), std::begin(range), std::end(range));
 		std::ranges::sort(storage, {}, Proj);
-		storage.erase(std::ranges::unique(storage, {}, Proj).end());
+		auto to_erase = std::ranges::unique(storage, {}, Proj);
+		storage.erase(to_erase.begin(), to_erase.end());
 	}
 
 	constexpr void del(const key& key) {
@@ -69,6 +80,8 @@ public:
 		if (it != storage.end() && std::invoke(Proj, *it) == key)
 			storage.erase(it);
 	}
+
+	constexpr auto operator<=>(const flat_map_base& other) const = default;
 
 protected:
 	std::vector<T> storage;

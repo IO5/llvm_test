@@ -154,6 +154,7 @@
     <ClCompile Include="test\catch2\catch_amalgamated.cpp" />
     <ClCompile Include="test\lexer\fsm.cpp" />
     <ClCompile Include="test\utils\flat_map.cpp" />
+    <ClCompile Include="test\utils\flat_set.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="test\catch2\catch_amalgamated.hpp" />
