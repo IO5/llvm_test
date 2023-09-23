@@ -36,6 +36,9 @@
     <ClInclude Include="src\utils\argpack.h">
       <Filter>src\utils</Filter>
     </ClInclude>
+    <ClInclude Include="src\lexer\scanner.h">
+      <Filter>src\lexer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="test">

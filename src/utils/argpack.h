@@ -68,6 +68,9 @@ struct argpack_select<Pred, Head> {
 
 template <typename... T>
 struct argpack {
+
+	static constexpr size_t size = sizeof...(T);
+
 	template <std::size_t I>
 	using element = argpack_element<I, T...>::type;
 

@@ -4,7 +4,6 @@
 
 #include <utility>
 #include <type_traits>
-#include <tuple>
 #include <string>
 
 namespace lexer {
@@ -17,28 +16,38 @@ namespace lexer {
 		concept pattern = T::is_pattern::value;
 
 		template <pattern... Ps>
-		struct seq {
+		struct seq;
+
+		template <pattern Last, pattern... Ps>
+		struct seq<Last, Ps...> {
 
 			using is_pattern = std::true_type;
 
-			consteval seq(Ps... ps) :
-				patterns(ps...) {}
+			template <typename = void>
+				requires (sizeof...(Ps) == 0)
+			consteval seq(Last last) : last(last) {}
 
-			consteval seq(std::tuple<Ps...> tuple) :
-				patterns(tuple) {}
+			consteval seq(seq<Ps...> front, Last last) :
+				front(front), last(last) {}
 
-			std::tuple<Ps...> patterns;
+			seq<Ps...> front;
+			Last last;
 		};
 
 		template<>
 		struct seq<> {}; // intentionally not marked as pattern
 
-		template <typename... Ls, typename... Rs>
-		consteval auto operator,(seq<Ls...> lhs, seq<Rs...> rhs) {
-			return seq(std::tuple_cat(lhs.patterns, rhs.patterns));
+		template <pattern L, pattern R>
+		consteval auto operator,(L lhs, R rhs) {
+			return seq<R, L>(seq<L>(lhs), rhs);
 		}
 
-		template <typename... Ls>
+		template <pattern... Ps, pattern R>
+		consteval auto operator,(seq<Ps...> lhs, R rhs) {
+			return seq<R, Ps...>(lhs, rhs);
+		}
+
+		/*template <typename... Ls>
 		consteval auto operator,(seq<Ls...> lhs, pattern auto rhs) {
 			return seq(std::tuple_cat(lhs.patterns, std::make_tuple(rhs)));
 		}
@@ -46,11 +55,7 @@ namespace lexer {
 		template <typename... Rs>
 		consteval auto operator,(pattern auto lhs, seq<Rs...> rhs) {
 			return seq(std::tuple_cat(std::make_tuple(lhs), rhs.patterns));
-		}
-
-		consteval auto operator,(pattern auto lhs, pattern auto rhs) {
-			return seq(lhs, rhs);
-		}
+		}*/
 
 		template <pattern L, pattern R>
 		struct or_ {

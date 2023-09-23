@@ -15,13 +15,6 @@ namespace lexer {
 
 	using std::string_view, std::size_t;
 
-	// TODO
-	namespace pattern {
-
-		constexpr auto exponent = (('e'_p | 'E'_p), ~('-'_p | '+'_p), +digit);
-		constexpr auto float_literal = (~'-'_p, (*digit, '.'_p, +digit, ~exponent) | (+digit, exponent));
-	}
-
 	namespace fsm {
 
 		namespace p = pattern;
@@ -132,14 +125,8 @@ namespace lexer {
 			template <p::pattern... Ps>
 			static constexpr nfa from_pattern(p::seq<Ps...> seq) {
 
-				return from_pattern(seq.patterns);
-			}
-
-			template <p::pattern... Ps>
-			static constexpr nfa from_pattern(std::tuple<Ps...> seq) {
-
-				auto [reminder, last] = tuple_pop(seq);
-				auto res = from_pattern(reminder);
+				auto& [front, last] = seq;
+				auto res = from_pattern(front);
 
 				res.join(from_pattern(last));
 
@@ -147,9 +134,9 @@ namespace lexer {
 			}
 
 			template <p::pattern P>
-			static constexpr nfa from_pattern(std::tuple<P> seq) {
+			static constexpr nfa from_pattern(p::seq<P> seq) {
 
-				return from_pattern(std::get<0>(seq));
+				return from_pattern(seq.last);
 			}
 
 			template <p::pattern L, p::pattern R>
@@ -292,17 +279,15 @@ namespace lexer {
 			}
 
 			// similar to or_ but disjoint final states, so only suitable for final mutliple pattern merge
-			template <typename Action, typename... Nfas>
-			friend constexpr auto merge_nfas(Nfas&&... nfas) {
+			template <typename Action>
+			friend constexpr auto merge_nfas(auto&& nfas) {
 
-				nfa res;
-
-				std::vector<nfa<Action>> nfas = { std::move(nfas)... };
+				nfa<Action> res;
 
 				for (auto& n : nfas) {
 					state_id initial = res.states.size();
 					res.splice_states(std::move(n));
-					add_eps_transition(0, initial);
+					res.add_eps_transition(0, initial);
 				}
 
 				return res;
@@ -429,7 +414,7 @@ namespace lexer {
 				}
 
 				result.push_back(current);
-				};
+			};
 
 			while (!inputs.empty()) {
 				auto current = inputs.front();
@@ -717,111 +702,5 @@ namespace lexer {
 							//							add Y \ X to W
 		};
 
-		namespace compile_time {
-
-			// TODO move
-			template <typename... States>
-			class scanner {
-
-			public:
-			};
-			// /TODO
-
-			template <auto Action, typename... Transitions>
-			struct state {
-
-				using transitions = argpack<Transitions...>;
-				static constexpr auto action = Action;
-			};
-
-			template <typename... Transitions>
-			struct state<std::nullopt, Transitions...> {
-
-				using transitions = argpack<Transitions...>;
-			};
-
-			template <size_t Next, fsm::interval Input>
-			struct transition {
-				static constexpr auto next = Next;
-				static constexpr auto input = Input;
-			};
-
-			template <typename Action, auto... Definition>
-			struct builder {
-
-				template <p::pattern P>
-				static constexpr auto make_nfa(const std::pair<P, Action>& definition) {
-
-					auto result = nfa<Action>::from_pattern(definition.first);
-					result.states.back().action = definition.second;
-					return result;
-				}
-
-				static constexpr auto make_dfa() {
-
-					auto merged = merge_nfas(make_nfa(Definition)...);
-
-					auto dfa = dfa<Action>::from_nfa(merged);
-
-					return dfa;
-				}
-
-				static constexpr auto states(size_t I) {
-					return make_dfa().states[I];
-				}
-
-				template <size_t I, size_t J>
-				using make_tran = transition<
-					states(I).trans[J].next,
-					states(I).trans[J].input
-				>;
-
-				template <size_t Idx, size_t... Is>
-				static constexpr auto make_state_impl(std::index_sequence<Is...>) {
-					constexpr auto action = unwrap_optional<
-						bool(states(Idx).action)
-					>(
-						states(Idx).action
-					);
-
-					return state<
-						action,
-						make_tran<Idx, Is>...
-					>{};
-				}
-
-				template <size_t Idx>
-				static constexpr auto make_state() {
-					return make_state_impl<Idx>(
-						std::make_index_sequence<
-							states(Idx).trans.size()
-						>{}
-					);
-				}
-
-				template <size_t... Is>
-				static constexpr auto make_scanner(std::index_sequence<Is...>) {
-					return scanner<
-						decltype(
-							make_state<Is...>()
-						)...
-					>;
-				}
-
-				using result = decltype(
-					make_scanner(
-						std::make_index_sequence<
-							make_dfa().states.size()
-						>{}
-					)
-				);
-			};
-		}
-
-		template <typename... States>
-		class scanner {
-
-		public:
-		};
 	}
 }

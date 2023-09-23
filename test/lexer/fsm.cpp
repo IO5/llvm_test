@@ -1,37 +1,46 @@
 #include "lexer/fsm.h"
+#include "lexer/scanner.h"
 
 #include <catch2/catch_amalgamated.hpp>
 
 using namespace lexer::fsm;
 
-static consteval void compile_time_tests() {
+using namespace lexer::pattern;
+
+//TODO
+constexpr auto exponent = (('e'_p | 'E'_p), ~('-'_p | '+'_p), +digit);
+constexpr auto float_literal = (~'-'_p, (*digit, '.'_p, +digit, ~exponent) | (+digit, exponent));
+
+static consteval auto compile_time_tests() {
 
 	using namespace lexer::pattern;
 	constexpr auto p = ('a'_p, zero_or_more('a'_p));
 
+	using Action = int (*)(std::string_view lexeme);
+
+	constexpr auto* reject = Action([](std::string_view) { return 0; });
+	constexpr auto* accept = Action([](std::string_view) { return 1; });
+	constexpr auto def = std::make_pair(p, accept);
+
+	using builder = lexer::scanner::builder<Action, reject, def>;
+	constexpr auto sc = builder::make_scanner();
+	return sc;
 }
 
 TEST_CASE("lexer::fsm") {
 
-	compile_time_tests();
-
+	auto sc = compile_time_tests();
 	using namespace lexer::pattern;
-	constexpr auto p = (zero_or_one('a'_p), ('b'_p | range('b', 'd')), zero_or_more(one_or_more('d'_p)), at_least<2>(range('c', 'e')), at_most<2>('f'_p), times<1, 3>('z'_p));
 
-	auto n = nfa<int>::from_pattern(p);
-	n.states.back().action = 23;
-	auto d = dfa<int>::from_nfa(n);
+	REQUIRE(sc.scan("a") == 1);
+	REQUIRE(sc.scan("aa") == 1);
+	REQUIRE(sc.scan("aaaaaaa") == 1);
+	REQUIRE(sc.scan("b") == 0);
+	REQUIRE(sc.scan("ba") == 0);
+	REQUIRE(sc.scan("") == 0);
+	//REQUIRE(sc.scan("1.0") == 1);
+	//REQUIRE(sc.scan("-2.5") == 1);
+	//REQUIRE(sc.scan("0.0") == 1);
 
-	size_t s = 0;
-	for (char c : std::string_view("abee")) {
-		s = d.step(s, c);
-		if (s == -1)
-			break;
-	}
 
-	std::optional<int> r;
-	if (s != -1)
-		r = d.states[s].action;
-
-	int _ = 2;
 }

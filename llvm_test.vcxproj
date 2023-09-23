@@ -188,6 +188,7 @@
     <ClInclude Include="overload.h" />
     <ClInclude Include="src\lexer\fsm.h" />
     <ClInclude Include="src\lexer\pattern.h" />
+    <ClInclude Include="src\lexer\scanner.h" />
     <ClInclude Include="src\utils\argpack.h" />
     <ClInclude Include="src\utils\constexpr_utils.h" />
     <ClInclude Include="src\utils\flat_map.h" />
