@@ -1,21 +1,26 @@
 #pragma once
 
-#include "static_string.h"
+#include "lexer/pattern_action.h"
 
-#include "argpack.h"
-#include "overload.h"
+#include "utils/static_string.h"
+#include "utils/argpack.h"
+#include "utils/overload.h"
 
 #include <variant>
-#include <cassert>
+#include <type_traits>
 
 namespace token {
 
-	struct eof {};
+	struct eof {
+		static constexpr auto pattern = lexer::pattern::single_char{ '\0' };
+	};
 
 	/// base class for tokens defined by an exact character sequence
 	template <static_string Str>
 	struct lexeme {
 		static constexpr std::string_view text = Str;
+
+		static constexpr auto pattern = lexer::pattern::char_seq(Str);
 	};
 
 	template <static_string Str>
@@ -26,15 +31,6 @@ namespace token {
 
 	template <static_string Str>
 	struct keyword : lexeme<Str> {};
-
-	template <typename T>
-	struct literal {
-		T value;
-	};
-
-	struct identifier {
-		std::string name;
-	};
 
 	namespace detail {
 		template <template <auto> typename Base, typename T>
@@ -59,19 +55,19 @@ namespace token {
 		template <typename Tk>
 		static constexpr std::size_t id_of = token_list::template index<Tk>;
 
-		constexpr token_definition(std::size_t source_offset) :
-			source_offset(source_offset) {}
+		constexpr token_definition() = default;
 
 		template <typename T>
 			requires (std::is_same_v<T, Tokens> || ...)
-		constexpr token_definition(std::size_t source_offset, T&& t) :
-			v(std::forward<T>(t)),
-			source_offset(source_offset) {}
+		constexpr token_definition(T&& t) :
+			v(std::forward<T>(t)) {}
 
 		static constexpr auto from_id(std::size_t id) {
+
 			constexpr auto ctors = std::array{
 				+[] { return (decltype(v))(std::in_place_type<Tokens>); } ...
 			};
+
 			return token_definition(ctors[id]());
 		}
 
@@ -131,7 +127,7 @@ namespace token {
 		static_assert(!duplicate_tokens(token_list::index_sequence));
 
 		std::variant<Tokens...> v;
-		size_t source_offset = 0;
+		size_t source_offset = 0; // TODO
 	};
 }
 

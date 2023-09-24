@@ -19,26 +19,6 @@ namespace lexer {
 
 		namespace p = pattern;
 
-		namespace detail {
-
-			template <typename T, size_t... Is>
-			constexpr auto tuple_pop(T tuple, std::index_sequence<Is...>) {
-				return std::make_pair(
-					std::make_tuple(std::get<Is>(tuple) ...),
-					std::get<std::tuple_size_v<T> -1>(tuple)
-				);
-			}
-		}
-
-		// get last element + reminder of the tuple
-		template <typename T>
-		constexpr auto tuple_pop(T tuple) {
-			return detail::tuple_pop(
-				tuple,
-				std::make_index_sequence<std::tuple_size_v<T> -1>{}
-			);
-		}
-
 		struct interval {
 
 			char min;

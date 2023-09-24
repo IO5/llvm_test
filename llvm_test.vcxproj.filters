@@ -2,16 +2,13 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\tokens.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="token_definition.h" />
-    <ClInclude Include="tokens.h" />
-    <ClInclude Include="overload.h" />
     <ClInclude Include="static_map.h" />
     <ClInclude Include="fsm_scanner.h" />
-    <ClInclude Include="test\catch2\catch_amalgamated.hpp">
-      <Filter>test\catch2</Filter>
-    </ClInclude>
     <ClInclude Include="src\utils\flat_map_base.h">
       <Filter>src\utils</Filter>
     </ClInclude>
@@ -39,14 +36,20 @@
     <ClInclude Include="src\lexer\scanner.h">
       <Filter>src\lexer</Filter>
     </ClInclude>
+    <ClInclude Include="src\utils\overload.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\token\token_definition.h">
+      <Filter>src\token</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lexer\pattern_action.h">
+      <Filter>src\lexer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tokens.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="test">
-      <UniqueIdentifier>{8e0e2f9d-fa57-4498-9f5e-aa84c0de895c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="test\catch2">
-      <UniqueIdentifier>{77f6528c-b7fd-4deb-92c0-1b4a39d87632}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{a7db2b30-1f63-4383-ba07-514384707701}</UniqueIdentifier>
     </Filter>
@@ -55,6 +58,9 @@
     </Filter>
     <Filter Include="src\lexer">
       <UniqueIdentifier>{ec58fdd5-aab0-4c0b-bcce-204c2574ee68}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\token">
+      <UniqueIdentifier>{ce08348c-1b6d-4cba-9efa-025085559a74}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -4,13 +4,15 @@
 
 #include <utility>
 #include <type_traits>
-#include <string>
+#include <string_view>
 
 namespace lexer {
 
 	using std::size_t;
 
 	namespace pattern {
+
+		struct pattern_base {};
 
 		template <typename T>
 		concept pattern = T::is_pattern::value;
@@ -34,6 +36,9 @@ namespace lexer {
 			Last last;
 		};
 
+		template <pattern Last, pattern... Ps>
+		seq(seq<Ps...> front, Last last) -> seq<Last, Ps...>;
+
 		template<>
 		struct seq<> {}; // intentionally not marked as pattern
 
@@ -46,16 +51,6 @@ namespace lexer {
 		consteval auto operator,(seq<Ps...> lhs, R rhs) {
 			return seq<R, Ps...>(lhs, rhs);
 		}
-
-		/*template <typename... Ls>
-		consteval auto operator,(seq<Ls...> lhs, pattern auto rhs) {
-			return seq(std::tuple_cat(lhs.patterns, std::make_tuple(rhs)));
-		}
-
-		template <typename... Rs>
-		consteval auto operator,(pattern auto lhs, seq<Rs...> rhs) {
-			return seq(std::tuple_cat(std::make_tuple(lhs), rhs.patterns));
-		}*/
 
 		template <pattern L, pattern R>
 		struct or_ {
@@ -149,15 +144,6 @@ namespace lexer {
 			return zero_or_one(p);
 		}
 
-		template <static_string Str>
-		consteval auto operator ""_p() {
-			if constexpr (Str.size == 1) {
-				return single_char(Str[0]);
-			} else {
-				return char_seq_impl(Str.data.data(), std::make_index_sequence<Str.size>{});
-			}
-		}
-
 		struct range {
 
 			using is_pattern = std::true_type;
@@ -173,24 +159,30 @@ namespace lexer {
 			char ch;
 		};
 
+		consteval auto char_seq(static_string<1> str) {
+			return seq<single_char>{ single_char(str[0]) };
+		}
+
+		template <size_t N>
+		consteval auto char_seq(static_string<N> str) {
+			return seq(
+				char_seq(str.substr<0, N - 1>()),
+				single_char{ str[N - 1] }
+			);
+		};
+
 		consteval auto operator ""_p(char c) {
 			return single_char(c);
 		}
 
-		template <size_t... Is>
-		consteval auto char_seq_impl(const char* str, std::index_sequence<Is...>) {
-			return seq(single_char(str[Is])...);
+		template <static_string Str>
+		consteval auto operator ""_p() {
+			if constexpr (Str.size == 1) {
+				return single_char(Str[0]);
+			} else {
+				return char_seq(Str);
+			}
 		}
-
-		template <size_t N>
-		consteval auto char_seq(const char(&str)[N]) {
-			return char_seq_impl(str, std::make_index_sequence<N>{});
-		};
-
-		template <size_t N>
-		consteval auto char_seq(static_string<N> str) {
-			return char_seq_impl(str, std::make_index_sequence<N>{});
-		};
 
 		constexpr auto any_char = range(-128, 127);
 		constexpr auto digit = range('0', '9');

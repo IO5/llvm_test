@@ -3,7 +3,6 @@
 #include <vector>
 #include <algorithm>
 #include <ranges>
-#include <functional>
 #include <span>
 
 template <typename T, auto Proj>

@@ -1,5 +1,4 @@
 #include "lexer/fsm.h"
-#include "lexer/scanner.h"
 
 #include <catch2/catch_amalgamated.hpp>
 
@@ -7,9 +6,7 @@ using namespace lexer::fsm;
 
 using namespace lexer::pattern;
 
-//TODO
-constexpr auto exponent = (('e'_p | 'E'_p), ~('-'_p | '+'_p), +digit);
-constexpr auto float_literal = (~'-'_p, (*digit, '.'_p, +digit, ~exponent) | (+digit, exponent));
+/*/TODO
 
 static consteval auto compile_time_tests() {
 
@@ -41,6 +38,4 @@ TEST_CASE("lexer::fsm") {
 	//REQUIRE(sc.scan("1.0") == 1);
 	//REQUIRE(sc.scan("-2.5") == 1);
 	//REQUIRE(sc.scan("0.0") == 1);
-
-
-}
+}*/

@@ -182,23 +182,24 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\tokens.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fsm_scanner.h" />
-    <ClInclude Include="overload.h" />
     <ClInclude Include="src\lexer\fsm.h" />
     <ClInclude Include="src\lexer\pattern.h" />
+    <ClInclude Include="src\lexer\pattern_action.h" />
     <ClInclude Include="src\lexer\scanner.h" />
+    <ClInclude Include="src\tokens.h" />
+    <ClInclude Include="src\token\token_definition.h" />
     <ClInclude Include="src\utils\argpack.h" />
     <ClInclude Include="src\utils\constexpr_utils.h" />
     <ClInclude Include="src\utils\flat_map.h" />
     <ClInclude Include="src\utils\flat_map_base.h" />
     <ClInclude Include="src\utils\flat_set.h" />
+    <ClInclude Include="src\utils\overload.h" />
     <ClInclude Include="src\utils\static_string.h" />
     <ClInclude Include="static_map.h" />
-    <ClInclude Include="test\catch2\catch_amalgamated.hpp" />
-    <ClInclude Include="token_definition.h" />
-    <ClInclude Include="tokens.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

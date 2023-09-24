@@ -1,4 +1,4 @@
-//#include "tokens.h"
+#include "tokens.h"
 //#include "fsm_scanner.h"
 #include "lexer/fsm.h"
 
@@ -184,6 +184,9 @@ auto lut = makeLut(std::make_index_sequence<std::tuple_size_v<tk::Tokens>>{});
 */
 
 int main() {
+
+	lexer::token t;
+
 	//static std::unique_ptr<llvm::IRBuilder<>> Builder;
 
 	//auto context = std::make_unique<llvm::LLVMContext>();

@@ -152,7 +152,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="test\catch2\catch_amalgamated.cpp" />
+    <ClCompile Include="test\lexer\float_scanner.cpp" />
     <ClCompile Include="test\lexer\fsm.cpp" />
+    <ClCompile Include="test\lexer\scanner.cpp" />
     <ClCompile Include="test\utils\flat_map.cpp" />
     <ClCompile Include="test\utils\flat_set.cpp" />
   </ItemGroup>
