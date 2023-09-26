@@ -420,6 +420,7 @@ namespace lexer {
 			};
 
 			std::vector<state> states;
+			Action reject_action = {};
 
 			constexpr dfa() = default;
 
@@ -437,7 +438,6 @@ namespace lexer {
 				return rejected;
 			}
 
-			template <auto RejectAction>
 			constexpr auto scan(const char* ptr) {
 
 				auto begin = ptr;
@@ -458,7 +458,7 @@ namespace lexer {
 				if (states[current].action)
 					return std::invoke(*states[current].action, lexeme);
 
-				return std::invoke(RejectAction, lexeme);
+				return std::invoke(reject_action, lexeme);
 			}
 
 		private:

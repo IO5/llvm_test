@@ -1,14 +1,15 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\tokens.cpp">
-      <Filter>src</Filter>
+    <ClCompile Include="tmp.cpp" />
+    <ClCompile Include="src\token\tokens.cpp">
+      <Filter>src\token</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lexer\lexer.cpp">
+      <Filter>src\lexer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="static_map.h" />
-    <ClInclude Include="fsm_scanner.h" />
     <ClInclude Include="src\utils\flat_map_base.h">
       <Filter>src\utils</Filter>
     </ClInclude>
@@ -45,14 +46,17 @@
     <ClInclude Include="src\lexer\pattern_action.h">
       <Filter>src\lexer</Filter>
     </ClInclude>
-    <ClInclude Include="src\tokens.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ast.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="src\utils\array_of_arrays.h">
       <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lexer\lexer.h">
+      <Filter>src\lexer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\token\tokens.h">
+      <Filter>src\token</Filter>
+    </ClInclude>
+    <ClInclude Include="src\parser\ast.h">
+      <Filter>src\parser</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -67,6 +71,9 @@
     </Filter>
     <Filter Include="src\token">
       <UniqueIdentifier>{ce08348c-1b6d-4cba-9efa-025085559a74}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\parser">
+      <UniqueIdentifier>{78fe6399-479b-44cc-8c97-2560c39babed}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

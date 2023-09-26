@@ -9,43 +9,55 @@
 
 namespace lexer::scanner {
 
-	template <action Action, Action RejectAction, auto... States>
+	template <typename Token, size_t... NumTrans>
 	class scanner {
+
+	public:
+
+		static constexpr size_t num_states = sizeof...(NumTrans);
+
+		using token_type = Token;
+		using action = token_type (*)(std::string_view);
+
+		using state_id = fsm::state_id;
+		using transition = fsm::transition;
+
+		array_of_arrays<transition, NumTrans...> transitions;
+		std::array<action, num_states> actions;
 
 	private:
 
-		static constexpr auto rejected = size_t(-1);
+		static constexpr auto rejected = state_id(-1);
 
-		template <auto& State>
-		static constexpr size_t move(char c) {
+		template <state_id State>
+		constexpr state_id move(char c) const {
 
-			for (const auto& [next, input] : State.transitions)
+			for (const auto& [next, input] : transitions.get<State>())
 				if (input.contains(c))
 					return next;
 
 			return rejected;
 		}
 
-		static constexpr auto move_lut = std::array{
-			+[](char c) { return move<States>(c); }
-			...
-		};
+		template <state_id... Is>
+		static constexpr auto make_move_lut(std::index_sequence<Is...>) {
+			return std::array{
+				&move<Is>...
+			};
+		}
 
-		static constexpr auto action_lut = std::array{
-			States.action
-			...
-		};
+		static constexpr auto move_lut = make_move_lut(std::make_index_sequence<num_states>{});
 
 	public:
 
-		static constexpr auto scan(const char* ptr) {
+		constexpr token_type scan(const char* ptr) const {
 
 			auto begin = ptr;
 
 			size_t current = 0;
 			while (true) {
 
-				size_t next = move_lut[current](*ptr);
+				size_t next = std::invoke(move_lut[current], this, *ptr);
 				if (next == rejected)
 					break;
 
@@ -55,36 +67,77 @@ namespace lexer::scanner {
 
 			auto lexeme = std::string_view(begin, ptr);
 
-			return std::invoke(action_lut[current], lexeme);
+			return std::invoke(actions[current], lexeme);
 		}
 	};
 
-	using transition = fsm::transition;
+	template <typename T>
+	struct has_defined_pattern : std::bool_constant<requires { T::pattern; }> {};
 
-	template <action Action, size_t TransNum>
-	struct state {
+	template <typename Token, typename CustomPatterns>
+	struct builder;
 
-		Action action;
-		std::array<transition, TransNum> transitions;
-	};
+	template <typename Token, auto... CustomPatterns>
+	struct builder<Token, pattern_action_list<CustomPatterns...> > {
 
-	template <action Action, Action RejectAction, auto... Definitions>
-	struct builder {
+		using token_type = Token;
+		using action = token_type (*)(std::string_view);
 
-		using dfa = fsm::dfa<Action>;
-		using dfa_state = fsm::dfa<Action>::state;
+		action reject_action;
 
-		template <pattern::pattern P>
-		static constexpr auto make_nfa(const std::pair<P, Action>& definition) {
+		constexpr auto make_scanner() const {
 
-			auto result = fsm::nfa<Action>::from_pattern(definition.first);
-			result.states.back().action = definition.second;
+			return make_scanner_impl(
+				std::make_index_sequence<num_states>{}
+			);
+		}
+
+	private:
+		using dfa = fsm::dfa<action>;
+		using dfa_state = fsm::dfa<action>::state;
+
+		template <auto Action>
+		static token_type invoke_action(std::string_view lexeme) {
+
+			return token_type(std::invoke(Action, lexeme));
+		}
+
+		template <auto Value>
+		static token_type return_value(std::string_view) {
+
+			return token_type(Value);
+		}
+
+		template <auto Definition>
+		static constexpr auto make_nfa() {
+
+			auto result = fsm::nfa<action>::from_pattern(Definition.pattern);
+
+			if constexpr (requires{ Definition.action; })
+				result.states.back().action = &invoke_action<Definition.action>;
+			else
+				result.states.back().action = &return_value<Definition.value>;
+
+			return result;
+		}
+
+		template <typename... Tokens>
+		static constexpr auto make_nfas(argpack<Tokens...>) {
+
+			auto result = std::vector{
+				make_nfa< (Tokens::pattern >> &return_value<Tokens{}>) >()
+				...,
+				make_nfa< CustomPatterns >()
+				...
+			};
 			return result;
 		}
 
 		static constexpr auto make_dfa() {
 
-			auto merged = merge_nfas<Action>(std::array{ make_nfa(Definitions)... });
+			using builtin_patterns = typename token_type::token_list::template filter<has_defined_pattern>;
+
+			auto merged = merge_nfas<action>(make_nfas(builtin_patterns{}));
 
 			auto dfa = dfa::from_nfa(merged);
 
@@ -95,41 +148,29 @@ namespace lexer::scanner {
 		static constexpr auto get_num_trans(std::index_sequence<Is...>) {
 
 			auto dfa = make_dfa();
-			return std::array{ dfa.states[Is].trans.size() ... };
+			return std::array{ dfa.states[Is].trans.size()... };
 		}
 
 		static constexpr size_t num_states = make_dfa().states.size();
 		static constexpr auto num_trans = get_num_trans(std::make_index_sequence<num_states>{});
 
-		template <size_t Idx>
-		static constexpr auto make_state() {
-
-			auto dfa_state = make_dfa().states[Idx];
-
-			auto trans = std::array<transition, num_trans[Idx]>{};
-			std::copy(dfa_state.trans.begin(), dfa_state.trans.end(), trans.begin());
-
-			return state<Action, num_trans[Idx]>{
-				.action = (dfa_state.action ? *dfa_state.action : RejectAction),
-				.transitions = trans
-			};
-		}
-
 		template <size_t... Is>
-		static constexpr auto make_scanner_impl(std::index_sequence<Is...>) {
+		constexpr auto make_scanner_impl(std::index_sequence<Is...>) const {
 
-			return scanner<
-				Action,
-				RejectAction,
-				make_state<Is>()...
-			>{};
-		}
+			auto dfa = make_dfa();
 
-		static constexpr auto make_scanner() {
+			auto result = scanner<Token, num_trans[Is]...>{};
 
-			return make_scanner_impl(
-				std::make_index_sequence<num_states>{}
-			);
+			for (int i = 0; i < num_states; ++i) {
+
+				const auto& state = dfa.states[i];
+
+				result.actions[i] = (state.action ? *state.action : reject_action);
+
+				std::copy(state.trans.begin(), state.trans.end(), result.transitions[i].begin());
+			}
+
+			return result;
 		}
 	};
 }

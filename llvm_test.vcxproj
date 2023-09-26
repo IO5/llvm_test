@@ -193,17 +193,23 @@
     <ProjectReference />
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\tokens.cpp" />
+    <ClCompile Include="tmp.cpp" />
+    <ClCompile Include="src\lexer\lexer.cpp">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">/constexpr:steps8388608 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">/constexpr:steps8388608 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">/constexpr:steps8388608 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/constexpr:steps8388608 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\token\tokens.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="fsm_scanner.h" />
-    <ClInclude Include="src\ast.h" />
     <ClInclude Include="src\lexer\fsm.h" />
+    <ClInclude Include="src\lexer\lexer.h" />
     <ClInclude Include="src\lexer\pattern.h" />
     <ClInclude Include="src\lexer\pattern_action.h" />
     <ClInclude Include="src\lexer\scanner.h" />
-    <ClInclude Include="src\tokens.h" />
+    <ClInclude Include="src\parser\ast.h" />
+    <ClInclude Include="src\token\tokens.h" />
     <ClInclude Include="src\token\token_definition.h" />
     <ClInclude Include="src\utils\argpack.h" />
     <ClInclude Include="src\utils\array_of_arrays.h" />
@@ -213,7 +219,6 @@
     <ClInclude Include="src\utils\flat_set.h" />
     <ClInclude Include="src\utils\overload.h" />
     <ClInclude Include="src\utils\static_string.h" />
-    <ClInclude Include="static_map.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

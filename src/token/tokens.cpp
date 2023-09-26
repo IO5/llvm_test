@@ -1,6 +1,6 @@
 #include "tokens.h"
 
-namespace lexer {
+namespace token {
 
 	token integer_parser(std::string_view lexeme) {
 

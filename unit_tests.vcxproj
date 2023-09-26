@@ -163,15 +163,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="test\ast.cpp" />
     <ClCompile Include="test\catch2\catch_amalgamated.cpp" />
     <ClCompile Include="test\lexer\fsm.cpp" />
-    <ClCompile Include="test\lexer\scanner.cpp">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">/constexpr:steps8388608 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">/constexpr:steps8388608 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">/constexpr:steps8388608 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/constexpr:steps8388608 %(AdditionalOptions)</AdditionalOptions>
-    </ClCompile>
+    <ClCompile Include="test\lexer\lexer.cpp" />
+    <ClCompile Include="test\lexer\scanner.cpp" />
     <ClCompile Include="test\utils\flat_map.cpp" />
     <ClCompile Include="test\utils\flat_set.cpp" />
   </ItemGroup>

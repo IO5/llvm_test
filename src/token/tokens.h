@@ -36,13 +36,10 @@ namespace token {
 
 		constexpr bool operator==(const identifier&) const = default;
 	};
-}
-
-namespace tk = token;
-
-namespace lexer {
 
 	namespace pattern {
+
+		using namespace lexer::pattern;
 
 		constexpr auto integer_literal = (~'-'_p, +digit);
 		constexpr auto exponent = (('e'_p | 'E'_p), ~('-'_p | '+'_p), +digit);
@@ -91,9 +88,10 @@ namespace lexer {
 	token integer_parser(std::string_view lexeme);
 	token float_parser(std::string_view lexeme);
 
-	using pattern::operator""_p;
+	using lexer::pattern::operator""_p;
+	using lexer::operator>>;
 
-	using custom_patterns = pattern_action_list<
+	using custom_patterns = lexer::pattern_action_list<
 		("true"_p >> literal<bool>{true}),
 		("false"_p >> literal<bool>{false}),
 		("nan"_p >> literal<double>{ std::numeric_limits<double>::quiet_NaN() }),
@@ -106,3 +104,4 @@ namespace lexer {
 	>;
 }
 
+namespace tk = token;
