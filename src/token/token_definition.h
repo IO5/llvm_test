@@ -12,6 +12,8 @@
 namespace token {
 
 	struct eof {
+		constexpr bool operator==(const eof&) const = default;
+
 		static constexpr auto pattern = lexer::pattern::single_char{ '\0' };
 	};
 
@@ -19,6 +21,8 @@ namespace token {
 	template <static_string Str>
 	struct lexeme {
 		static constexpr std::string_view text = Str;
+
+		constexpr bool operator==(const lexeme&) const = default;
 
 		static constexpr auto pattern = lexer::pattern::char_seq(Str);
 	};
@@ -60,7 +64,12 @@ namespace token {
 		template <typename T>
 			requires (std::is_same_v<T, Tokens> || ...)
 		constexpr token_definition(T&& t) :
-			v(std::forward<T>(t)) {}
+			v(std::move(t)) {}
+
+		template <typename T>
+			requires (std::is_same_v<T, Tokens> || ...)
+		constexpr token_definition(const T& t) :
+			v(t) {}
 
 		static constexpr auto from_id(std::size_t id) {
 
@@ -97,6 +106,11 @@ namespace token {
 			return !is<Tk>();
 		}
 
+		template <typename Tk>
+		constexpr auto* get_if(this auto& self) {
+			return std::get_if<Tk>(&self.v);
+		}
+
 		template <typename... V>
 		constexpr decltype(auto) visit(V&&... visitors) {
 			return std::visit(
@@ -115,8 +129,19 @@ namespace token {
 		std::size_t get_source_offset() const {
 			return source_offset;
 		}
-		
-	private:
+
+		constexpr bool operator==(const token_definition& other) const = default;
+
+		template <typename T>
+			requires (std::is_same_v<T, Tokens> || ...)
+		constexpr bool operator==(const T& other) const {
+
+			if (const auto* value = std::get_if<T>(&v))
+				return *value == other;
+			return false;
+		}
+
+	protected:
 		constexpr token_definition(std::variant<Tokens...>&& v) :
 			v(std::move(v)) {}
 

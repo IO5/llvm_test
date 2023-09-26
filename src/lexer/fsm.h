@@ -411,6 +411,8 @@ namespace lexer {
 		class dfa {
 
 		public:
+			static constexpr auto rejected = state_id(-1);
+
 			struct state {
 
 				std::vector<transition> trans;
@@ -432,7 +434,31 @@ namespace lexer {
 					if (input.contains(c))
 						return next;
 
-				return state_id(-1);
+				return rejected;
+			}
+
+			template <auto RejectAction>
+			constexpr auto scan(const char* ptr) {
+
+				auto begin = ptr;
+
+				size_t current = 0;
+				while (true) {
+
+					size_t next = step(current, *ptr);
+					if (next == rejected)
+						break;
+
+					++ptr;
+					current = next;
+				}
+
+				auto lexeme = std::string_view(begin, ptr);
+
+				if (states[current].action)
+					return std::invoke(*states[current].action, lexeme);
+
+				return std::invoke(RejectAction, lexeme);
 			}
 
 		private:
@@ -535,7 +561,8 @@ namespace lexer {
 					for (auto id : states) {
 						auto& state = source.states[id];
 						if (state.action) {
-							compile_assert(!finals.contains(states));
+							//compile_assert(!finals.contains(states));
+							if (finals.contains(states)) std::abort(); // hmm
 							finals.add({ states, *state.action });
 							break;
 						}

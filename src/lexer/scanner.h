@@ -3,6 +3,8 @@
 #include "fsm.h"
 #include "pattern_action.h"
 
+#include "utils/array_of_arrays.h"
+
 #include <functional>
 
 namespace lexer::scanner {

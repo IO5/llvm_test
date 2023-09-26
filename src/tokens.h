@@ -7,18 +7,7 @@
 #include <cassert>
 #include <limits>
 
-namespace lexer {
-
-	namespace pattern {
-
-		constexpr auto integer_literal = (~'-'_p, +digit);
-		constexpr auto exponent = (('e'_p | 'E'_p), ~('-'_p | '+'_p), +digit);
-		constexpr auto float_literal = (~'-'_p, (*digit, '.'_p, +digit, ~exponent) | (+digit, exponent));
-		constexpr auto identifier = ((alpha, *alpnum) | ('_'_p, +alpnum));
-	}
-
-	using namespace token;
-	using pattern::operator""_p;
+namespace token {
 
 	struct error {
 
@@ -31,18 +20,39 @@ namespace lexer {
 
 		code code;
 		std::string lexeme;
+
+		constexpr bool operator==(const error&) const = default;
 	};
 
 	template <typename T>
 	struct literal {
 		T value;
+
+		constexpr bool operator==(const literal&) const = default;
 	};
 
 	struct identifier {
 		std::string name;
-	};
 
-	using token = token_definition <
+		constexpr bool operator==(const identifier&) const = default;
+	};
+}
+
+namespace tk = token;
+
+namespace lexer {
+
+	namespace pattern {
+
+		constexpr auto integer_literal = (~'-'_p, +digit);
+		constexpr auto exponent = (('e'_p | 'E'_p), ~('-'_p | '+'_p), +digit);
+		constexpr auto float_literal = (~'-'_p, (*digit, '.'_p, +digit, ~exponent) | (+digit, exponent));
+		constexpr auto identifier = (alpha | (('_'_p | alpha), +('_'_p | alpnum)));
+	}
+
+	using namespace token;
+
+	struct token : token_definition <
 		error,
 		eof,
 		op<"+">,
@@ -56,6 +66,7 @@ namespace lexer {
 		sym<"}">,
 		sym<"=">,
 		sym<",">,
+		sym<"_">,
 		keyword<"not">,
 		keyword<"in">,
 		keyword<"is">,
@@ -73,10 +84,14 @@ namespace lexer {
 		literal<double>,
 		literal<std::string>,
 		identifier
-	>;
+	> {
+		using token_definition::token_definition;
+	};
 
 	token integer_parser(std::string_view lexeme);
 	token float_parser(std::string_view lexeme);
+
+	using pattern::operator""_p;
 
 	using custom_patterns = pattern_action_list<
 		("true"_p >> literal<bool>{true}),

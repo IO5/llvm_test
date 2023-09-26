@@ -2,22 +2,6 @@
 //#include "fsm_scanner.h"
 #include "lexer/fsm.h"
 
-/*
-#include <deque>
-#include <variant>
-#include <string>
-#include <string_view>
-#include <array>
-#include <print>
-#include <type_traits>
-#include <memory>
-#include <ranges>
-#include <concepts>
-#include <map>
-#include <algorithm>
-#include <optional>
-#include <typeinfo>
-
 #include <llvm/Support/MemoryBuffer.h>
 
 #include <llvm/ADT/APFloat.h>
@@ -30,7 +14,25 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Type.h>
-#include <llvm/IR/Verifier.h>*/
+#include <llvm/IR/Verifier.h>
+
+#include <memory>
+#include <deque>
+#include <variant>
+
+/*
+#include <string>
+#include <string_view>
+#include <array>
+#include <print>
+#include <type_traits>
+#include <ranges>
+#include <concepts>
+#include <map>
+#include <algorithm>
+#include <optional>
+#include <typeinfo>
+*/
 
 using std::string;
 /*
@@ -71,52 +73,9 @@ constexpr auto precedence = make_map_const<std::string_view, int>({
 	{"*",  6},
 	{"/",  6},
 });*/
-/*
-namespace ast {
-	struct Expression;
-
-	template <static_string Op>
-	struct BinaryOp {
-		std::unique_ptr<const Expression> lhs;
-		std::unique_ptr<const Expression> rhs;
-	};
-
-	template <static_string Op>
-	struct UnaryOp {
-		std::unique_ptr<const Expression> expr;
-	};
-
-	template <typename T>
-	struct Literal {
-		T value;
-	};
-
-	struct Expression : std::variant<
-		BinaryOp<"+">,
-		BinaryOp<"-">,
-		UnaryOp<"-">,
-		Literal<bool>
-	> {};
-		//llvm::Value* codegen(llvm::IRBuilderBase& builder) const;
-
-
-	struct Statement {
-		std::unique_ptr<const Expression> expr;
-	};
-
-	struct Block {
-		std::deque<Statement> statements;
-	};
-
-	struct Function {
-		std::string name;
-		llvm::SmallVector<std::pair<std::string, std::string>, 5> params;
-		Block body;
-	};
-
-}*/
 
 /*
+
 using llvm::Value;
 class IRCompiler {
 	Value* codegen(const ast::Expression& expr) {
@@ -148,7 +107,7 @@ class IRCompiler {
 	Value* codegen(const ast::Literal<T>& lt) {
 		return nullptr;
 	}
-};*/
+};
 
 using namespace std::string_literals;
 /*
@@ -183,15 +142,15 @@ auto makeLut(std::index_sequence<I...>) {
 auto lut = makeLut(std::make_index_sequence<std::tuple_size_v<tk::Tokens>>{});
 */
 
-int main() {
+int not_main() {
 
 	lexer::token t;
 
-	//static std::unique_ptr<llvm::IRBuilder<>> Builder;
+	static std::unique_ptr<llvm::IRBuilder<>> Builder;
 
-	//auto context = std::make_unique<llvm::LLVMContext>();
-	//auto module = std::make_unique<llvm::Module>("my cool jit", *context);
-	//auto builder = std::make_unique<llvm::IRBuilder<>>(*context);
+	auto context = std::make_unique<llvm::LLVMContext>();
+	auto module = std::make_unique<llvm::Module>("my cool jit", *context);
+	auto builder = std::make_unique<llvm::IRBuilder<>>(*context);
 
 	//constexpr lexer::token t = lexer::token::from_id(5);
 	//static_assert(t.id() == 5);
@@ -227,4 +186,5 @@ int main() {
 		add_pattern<1>(single_char('z')).second;
 	std::println("{}", b.to_string());
 */
+	return 0;
 }

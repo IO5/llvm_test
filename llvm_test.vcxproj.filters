@@ -48,6 +48,12 @@
     <ClInclude Include="src\tokens.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\ast.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\array_of_arrays.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
